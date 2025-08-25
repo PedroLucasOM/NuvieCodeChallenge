@@ -1,29 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 from app.database.connection import get_db
-from app.schemas.user import Token, User, UserCreate
+from app.schemas.user import Token, User, UserCreate, UserLogin
 from app.application.use_cases.auth_use_cases import AuthUseCases
 from app.infrastructure.repositories.user_repository import UserRepository
 from app.presentation.dependencies import get_current_user
 from app.config import settings
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 async def get_auth_use_cases(db: AsyncSession = Depends(get_db)) -> AuthUseCases:
     user_repository = UserRepository(db)
     return AuthUseCases(user_repository)
 
-@router.post("/register", response_model=User)
+@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
 async def register_user(
     user: UserCreate,
     auth_use_cases: AuthUseCases = Depends(get_auth_use_cases)
 ):
     try:
-        user_entity = await auth_use_cases.register_user(user.dict())
-        return User.from_orm(user_entity)
+        user_entity = await auth_use_cases.register_user(user.model_dump())
+        return User.model_validate(user_entity)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -32,15 +30,15 @@ async def register_user(
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    login_data: UserLogin,
     auth_use_cases: AuthUseCases = Depends(get_auth_use_cases)
 ):
-    user = await auth_use_cases.authenticate_user(form_data.username, form_data.password)
+    user = await auth_use_cases.authenticate_user(login_data.username, login_data.password)
     
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciais incorretas",
+            detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
     

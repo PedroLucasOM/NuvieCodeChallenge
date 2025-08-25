@@ -1,68 +1,63 @@
 from typing import List, Optional, Dict, Any
 from app.domain.entities.patient import Patient
 from app.domain.interfaces import IPatientRepository
+from app.infrastructure.external.external_api_service import ExternalApiService
 
 class PatientUseCases:
-    def __init__(self, patient_repository: IPatientRepository):
+    def __init__(self, patient_repository: IPatientRepository, external_api_service: ExternalApiService = None):
         self._patient_repository = patient_repository
+        self._external_api_service = external_api_service or ExternalApiService()
     
     async def create_patient(self, patient_data: Dict[str, Any]) -> Patient:
         patient = Patient(
             id=None,
-            first_name=patient_data["first_name"],
-            last_name=patient_data["last_name"],
-            date_of_birth=patient_data["date_of_birth"],
-            gender=patient_data["gender"],
-            ssn=patient_data.get("ssn"),
-            address=patient_data.get("address"),
-            city=patient_data.get("city"),
-            state=patient_data.get("state"),
-            zip_code=patient_data.get("zip_code"),
-            phone=patient_data.get("phone"),
-            email=patient_data.get("email"),
-            synthea_id=patient_data.get("synthea_id"),
-            race=patient_data.get("race"),
-            ethnicity=patient_data.get("ethnicity")
+            name=patient_data["name"],
+            email=patient_data["email"],
+            phone=patient_data["phone"]
         )
         
         if not patient.is_valid_for_creation():
-            raise ValueError("Dados do paciente inválidos")
+            raise ValueError("Invalid patient data")
+        
+        existing_patient = await self._patient_repository.get_by_email(patient.email)
+        if existing_patient:
+            raise ValueError("Patient with this email already exists")
         
         return await self._patient_repository.create(patient)
     
     async def get_patient_by_id(self, patient_id: int) -> Optional[Patient]:
         return await self._patient_repository.get_by_id(patient_id)
     
-    async def search_patients(
+    async def get_patients(
         self, 
-        search: Optional[str] = None,
-        gender: Optional[str] = None,
-        city: Optional[str] = None,
-        state: Optional[str] = None,
-        age_min: Optional[int] = None,
-        age_max: Optional[int] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
+        search: Optional[str] = None
     ) -> List[Patient]:
-        filters = {}
-        
-        if search:
-            filters["search"] = search
-        if gender:
-            filters["gender"] = gender
-        if city:
-            filters["city"] = city
-        if state:
-            filters["state"] = state
-        if age_min:
-            filters["age_min"] = age_min
-        if age_max:
-            filters["age_max"] = age_max
-        
-        return await self._patient_repository.find_many(filters, skip, limit)
+        return await self._patient_repository.get_patients(skip, limit, search)
     
     async def update_patient(self, patient_id: int, update_data: Dict[str, Any]) -> Optional[Patient]:
+        if "email" in update_data:
+            existing_patient = await self._patient_repository.get_by_email(update_data["email"])
+            if existing_patient and existing_patient.id != patient_id:
+                raise ValueError("Patient with this email already exists")
+        
         return await self._patient_repository.update(patient_id, update_data)
     
     async def delete_patient(self, patient_id: int) -> bool:
         return await self._patient_repository.delete(patient_id)
+    
+    async def import_external_patients(self, count: int = 10) -> int:
+        external_patients = await self._external_api_service.fetch_patients(count)
+        imported_count = 0
+        
+        for patient_data in external_patients:
+            try:
+                existing_patient = await self._patient_repository.get_by_email(patient_data["email"])
+                if not existing_patient:
+                    await self.create_patient(patient_data)
+                    imported_count += 1
+            except Exception:
+                continue
+        
+        return imported_count

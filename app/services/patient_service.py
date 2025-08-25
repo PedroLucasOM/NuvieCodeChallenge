@@ -67,43 +67,50 @@ class PatientService:
         
         return True
 
-    async def import_synthea_patients(self) -> int:
-        """Importar pacientes do Synthea (simulação)"""
-        # Esta é uma implementação simulada
-        # Em um cenário real, você faria requisições para a API do Synthea
+    async def import_synthea_patients(self, count: int = 10) -> int:
+        """Import patients from external API"""
+        from app.infrastructure.external.synthea_service import SyntheaService
         
-        synthea_patients = [
-            {
-                "first_name": "John",
-                "last_name": "Doe",
-                "date_of_birth": "1990-01-15",
-                "gender": "male",
-                "synthea_id": "synthea_001",
-                "race": "white",
-                "ethnicity": "non-hispanic"
-            },
-            {
-                "first_name": "Jane",
-                "last_name": "Smith",
-                "date_of_birth": "1985-05-20",
-                "gender": "female",
-                "synthea_id": "synthea_002",
-                "race": "black",
-                "ethnicity": "non-hispanic"
-            }
-        ]
+        synthea_service = SyntheaService()
         
-        imported_count = 0
-        
-        for patient_data in synthea_patients:
-            # Verificar se o paciente já existe
-            existing_patient = self.db.query(Patient).filter(
-                Patient.synthea_id == patient_data["synthea_id"]
-            ).first()
+        try:
+            # Fetch FHIR data from external API
+            fhir_patients = await synthea_service.fetch_patients(count)
+            imported_count = 0
             
-            if not existing_patient:
-                patient_create = PatientCreate(**patient_data)
-                self.create_patient(patient_create)
-                imported_count += 1
-        
-        return imported_count
+            for fhir_data in fhir_patients:
+                # Transform FHIR data to Patient entity
+                patient_entity = await synthea_service.transform_fhir_to_patient(fhir_data)
+                
+                # Check if patient already exists by external ID
+                existing_patient = self.db.query(Patient).filter(
+                    Patient.synthea_id == patient_entity.synthea_id
+                ).first()
+                
+                if not existing_patient:
+                    # Create PatientCreate from entity
+                    patient_data = {
+                        "first_name": patient_entity.first_name,
+                        "last_name": patient_entity.last_name,
+                        "date_of_birth": patient_entity.date_of_birth,
+                        "gender": patient_entity.gender,
+                        "ssn": patient_entity.ssn,
+                        "address": patient_entity.address,
+                        "city": patient_entity.city,
+                        "state": patient_entity.state,
+                        "zip_code": patient_entity.zip_code,
+                        "phone": patient_entity.phone,
+                        "email": patient_entity.email,
+                        "race": patient_entity.race,
+                        "ethnicity": patient_entity.ethnicity,
+                        "synthea_id": patient_entity.synthea_id
+                    }
+                    
+                    patient_create = PatientCreate(**patient_data)
+                    self.create_patient(patient_create)
+                    imported_count += 1
+            
+            return imported_count
+            
+        except Exception as e:
+            raise Exception(f"Failed to import from external API: {str(e)}")

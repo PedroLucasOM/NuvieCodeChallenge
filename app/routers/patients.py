@@ -9,15 +9,21 @@ from app.services.auth_service import AuthService
 
 router = APIRouter()
 
-@router.post("/", response_model=Patient)
+@router.post("/", response_model=Patient, status_code=status.HTTP_201_CREATED)
 async def create_patient(
     patient: PatientCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(AuthService.get_current_user)
 ):
-    """Criar um novo paciente"""
+    """Create a new patient"""
     patient_service = PatientService(db)
-    return patient_service.create_patient(patient)
+    try:
+        return patient_service.create_patient(patient)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 @router.get("/", response_model=List[Patient])
 async def read_patients(
@@ -88,13 +94,20 @@ async def delete_patient(
 
 @router.post("/import-synthea")
 async def import_synthea_data(
+    count: int = Query(10, ge=1, le=100, description="Number of patients to import"),
     db: Session = Depends(get_db),
     current_user: User = Depends(AuthService.get_current_user)
 ):
-    """Importar dados do Synthea"""
+    """Import patient data from external API"""
     patient_service = PatientService(db)
-    imported_count = await patient_service.import_synthea_patients()
-    
-    return {
-        "message": f"Importados {imported_count} pacientes do Synthea com sucesso"
-    }
+    try:
+        imported_count = await patient_service.import_synthea_patients(count)
+        return {
+            "message": f"Successfully imported {imported_count} patients from external API",
+            "imported_count": imported_count
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to import external data: {str(e)}"
+        )

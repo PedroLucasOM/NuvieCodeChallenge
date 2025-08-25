@@ -1,67 +1,61 @@
-from pydantic import BaseModel
-from datetime import date, datetime
+from pydantic import BaseModel, EmailStr, field_validator, Field, ConfigDict
+from datetime import datetime
 from typing import Optional
+import re
 
 class PatientBase(BaseModel):
-    first_name: str
-    last_name: str
-    date_of_birth: date
-    gender: str
-    ssn: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    race: Optional[str] = None
-    ethnicity: Optional[str] = None
+    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr = Field(...)
+    phone: str = Field(..., min_length=10, max_length=20)
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if not v.strip():
+            raise ValueError('Name cannot be empty or just whitespace')
+        if not re.match(r'^[a-zA-Z\s\'-]+$', v):
+            raise ValueError('Name can only contain letters, spaces, hyphens and apostrophes')
+        return v.strip()
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        digits_only = re.sub(r'\D', '', v)
+        if len(digits_only) < 10 or len(digits_only) > 15:
+            raise ValueError('Phone number must contain 10-15 digits')
+        return v
 
 class PatientCreate(PatientBase):
-    synthea_id: Optional[str] = None
+    pass
 
 class PatientUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    date_of_birth: Optional[date] = None
-    gender: Optional[str] = None
-    ssn: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    race: Optional[str] = None
-    ethnicity: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=2, max_length=100)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, min_length=10, max_length=20)
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if v is not None:
+            if not v.strip():
+                raise ValueError('Name cannot be empty or just whitespace')
+            if not re.match(r'^[a-zA-Z\s\'-]+$', v):
+                raise ValueError('Name can only contain letters, spaces, hyphens and apostrophes')
+            return v.strip()
+        return v
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None:
+            digits_only = re.sub(r'\D', '', v)
+            if len(digits_only) < 10 or len(digits_only) > 15:
+                raise ValueError('Phone number must contain 10-15 digits')
+        return v
 
 class Patient(PatientBase):
     id: int
-    synthea_id: Optional[str] = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+    updated_at: datetime
     
-    @classmethod
-    def from_orm(cls, entity):
-        return cls(
-            id=entity.id,
-            first_name=entity.first_name,
-            last_name=entity.last_name,
-            date_of_birth=entity.date_of_birth,
-            gender=entity.gender,
-            ssn=entity.ssn,
-            address=entity.address,
-            city=entity.city,
-            state=entity.state,
-            zip_code=entity.zip_code,
-            phone=entity.phone,
-            email=entity.email,
-            synthea_id=entity.synthea_id,
-            race=entity.race,
-            ethnicity=entity.ethnicity,
-            created_at=entity.created_at,
-            updated_at=entity.updated_at
-        )
+    model_config = ConfigDict(from_attributes=True)

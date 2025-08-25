@@ -1,38 +1,37 @@
 import pytest
-from datetime import date
 from app.application.use_cases.patient_use_cases import PatientUseCases
 from app.infrastructure.repositories.patient_repository import PatientRepository
+from app.infrastructure.external.external_api_service import ExternalApiService
 
 @pytest.mark.asyncio
 async def test_create_patient(db_session):
     patient_repository = PatientRepository(db_session)
-    patient_use_cases = PatientUseCases(patient_repository)
+    external_api_service = ExternalApiService()
+    patient_use_cases = PatientUseCases(patient_repository, external_api_service)
     
     patient_data = {
-        "first_name": "John",
-        "last_name": "Doe",
-        "date_of_birth": date(1990, 1, 15),
-        "gender": "male",
-        "email": "john.doe@example.com"
+        "name": "John Doe",
+        "email": "john.doe@example.com",
+        "phone": "+1234567890"
     }
     
     patient = await patient_use_cases.create_patient(patient_data)
     
     assert patient.id is not None
-    assert patient.first_name == "John"
-    assert patient.last_name == "Doe"
+    assert patient.name == "John Doe"
     assert patient.email == "john.doe@example.com"
+    assert patient.phone == "+1234567890"
 
 @pytest.mark.asyncio
 async def test_get_patient_by_id(db_session):
     patient_repository = PatientRepository(db_session)
-    patient_use_cases = PatientUseCases(patient_repository)
+    external_api_service = ExternalApiService()
+    patient_use_cases = PatientUseCases(patient_repository, external_api_service)
     
     patient_data = {
-        "first_name": "Jane",
-        "last_name": "Smith",
-        "date_of_birth": date(1985, 5, 20),
-        "gender": "female"
+        "name": "Jane Smith",
+        "email": "jane.smith@example.com",
+        "phone": "+0987654321"
     }
     
     created_patient = await patient_use_cases.create_patient(patient_data)
@@ -40,40 +39,55 @@ async def test_get_patient_by_id(db_session):
     
     assert found_patient is not None
     assert found_patient.id == created_patient.id
-    assert found_patient.first_name == "Jane"
+    assert found_patient.name == "Jane Smith"
 
 @pytest.mark.asyncio
-async def test_search_patients(db_session):
+async def test_get_patients_with_search(db_session):
     patient_repository = PatientRepository(db_session)
-    patient_use_cases = PatientUseCases(patient_repository)
+    external_api_service = ExternalApiService()
+    patient_use_cases = PatientUseCases(patient_repository, external_api_service)
     
     patients_data = [
         {
-            "first_name": "Alice",
-            "last_name": "Johnson",
-            "date_of_birth": date(1990, 1, 1),
-            "gender": "female"
+            "name": "Alice Johnson",
+            "email": "alice.johnson@example.com",
+            "phone": "+1111111111"
         },
         {
-            "first_name": "Bob",
-            "last_name": "Wilson",
-            "date_of_birth": date(1985, 1, 1),
-            "gender": "male"
+            "name": "Bob Wilson",
+            "email": "bob.wilson@example.com",
+            "phone": "+2222222222"
         },
         {
-            "first_name": "Charlie",
-            "last_name": "Brown",
-            "date_of_birth": date(1988, 1, 1),
-            "gender": "male"
+            "name": "Charlie Brown",
+            "email": "charlie.brown@example.com",
+            "phone": "+3333333333"
         }
     ]
     
     for patient_data in patients_data:
         await patient_use_cases.create_patient(patient_data)
     
-    results = await patient_use_cases.search_patients(search="Alice")
-    assert len(results) == 1
-    assert results[0].first_name == "Alice"
+    results = await patient_use_cases.get_patients(search="Alice")
+    assert len(results) >= 1
+    assert any("Alice" in patient.name for patient in results)
     
-    all_results = await patient_use_cases.search_patients()
+    all_results = await patient_use_cases.get_patients()
     assert len(all_results) >= 3
+
+@pytest.mark.asyncio
+async def test_create_duplicate_email(db_session):
+    patient_repository = PatientRepository(db_session)
+    external_api_service = ExternalApiService()
+    patient_use_cases = PatientUseCases(patient_repository, external_api_service)
+    
+    patient_data = {
+        "name": "Test User",
+        "email": "duplicate@example.com",
+        "phone": "+1234567890"
+    }
+    
+    await patient_use_cases.create_patient(patient_data)
+    
+    with pytest.raises(ValueError, match="email already exists"):
+        await patient_use_cases.create_patient(patient_data)

@@ -13,11 +13,11 @@ class IPatientRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_synthea_id(self, synthea_id: str) -> Optional[Patient]:
+    async def get_by_email(self, email: str) -> Optional[Patient]:
         pass
     
     @abstractmethod
-    async def find_many(self, filters: Dict[str, Any], skip: int = 0, limit: int = 100) -> List[Patient]:
+    async def get_patients(self, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[Patient]:
         pass
     
     @abstractmethod
@@ -43,13 +43,4 @@ class IUserRepository(ABC):
     
     @abstractmethod
     async def get_by_email(self, email: str) -> Optional[User]:
-        pass
-
-class ISyntheaService(ABC):
-    @abstractmethod
-    async def fetch_patients(self, count: int = 10) -> List[Dict[str, Any]]:
-        pass
-    
-    @abstractmethod
-    async def transform_fhir_to_patient(self, fhir_data: Dict[str, Any]) -> Patient:
         pass

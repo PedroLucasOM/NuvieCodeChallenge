@@ -1,37 +1,43 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from app.database.connection import get_db
-from app.schemas.user import Token, User, UserCreate
+from app.schemas.user import Token, User, UserCreate, UserLogin
 from app.services.auth_service import AuthService
 from app.config import settings
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
-@router.post("/register", response_model=User)
+@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
 async def register_user(
     user: UserCreate,
     db: Session = Depends(get_db)
 ):
-    """Registrar um novo usuário"""
+    """Register a new user"""
     auth_service = AuthService(db)
-    return auth_service.create_user(user)
+    try:
+        return auth_service.create_user(user)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    user_login: UserLogin,
     db: Session = Depends(get_db)
 ):
-    """Login e obtenção de token JWT"""
+    """Login with username/email and password to get JWT token"""
     auth_service = AuthService(db)
-    user = auth_service.authenticate_user(form_data.username, form_data.password)
+    user = auth_service.authenticate_user(user_login.username, user_login.password)
     
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciais incorretas",
+            detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
     

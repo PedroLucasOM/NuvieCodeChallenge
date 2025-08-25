@@ -1,45 +1,54 @@
 @echo off
-echo 🚀 Iniciando Nuvie Backend Challenge...
+echo Starting Nuvie Backend Challenge...
 
 REM Verificar se Docker está rodando
 docker info >nul 2>&1
 if errorlevel 1 (
-    echo ❌ Docker não está rodando. Por favor, inicie o Docker primeiro.
+    echo Docker is not running. Please start Docker first.
     pause
     exit /b 1
 )
 
 REM Copiar arquivo de ambiente se não existir
 if not exist .env (
-    echo 📋 Copiando arquivo de configuração...
+    echo Copying environment configuration file...
     copy .env.example .env
-    echo ✅ Arquivo .env criado. Configure as variáveis conforme necessário.
+    echo .env file created. Configure variables as needed.
 )
 
 REM Iniciar serviços
-echo 🐳 Iniciando containers Docker...
+echo Starting Docker containers...
 docker-compose up -d
 
 REM Aguardar serviços ficarem prontos
-echo ⏳ Aguardando serviços iniciarem...
-timeout /t 10 /nobreak >nul
+echo Waiting for database to initialize...
+timeout /t 15 /nobreak >nul
+
+REM Executar migrations
+echo Running database migrations...
+docker-compose exec -T api alembic upgrade head
+if errorlevel 1 (
+    echo Warning: Failed to run migrations. Retrying...
+    timeout /t 5 /nobreak >nul
+    docker-compose exec -T api alembic upgrade head
+)
 
 REM Verificar health check
-echo 🔍 Verificando status da aplicação...
+echo Checking application status...
 curl -f http://localhost:8000/health >nul 2>&1
 if errorlevel 1 (
-    echo ❌ Falha ao iniciar a aplicação. Verifique os logs:
+    echo Failed to start application. Check logs:
     echo    docker-compose logs api
 ) else (
-    echo ✅ Aplicação está rodando!
+    echo Application is running!
     echo.
-    echo 📊 URLs disponíveis:
+    echo Available URLs:
     echo    API: http://localhost:8000
     echo    Docs: http://localhost:8000/docs
     echo    Health: http://localhost:8000/health
     echo.
-    echo 📝 Para ver logs: docker-compose logs -f api
-    echo 🛑 Para parar: docker-compose down
+    echo To view logs: docker-compose logs -f api
+    echo To stop: docker-compose down
 )
 
 pause

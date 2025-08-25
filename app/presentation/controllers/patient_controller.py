@@ -6,24 +6,25 @@ from app.schemas.patient import Patient, PatientCreate, PatientUpdate
 from app.schemas.user import User
 from app.application.use_cases.patient_use_cases import PatientUseCases
 from app.infrastructure.repositories.patient_repository import PatientRepository
-from app.infrastructure.external.synthea_service import SyntheaService
+from app.infrastructure.external.external_api_service import ExternalApiService
 from app.presentation.dependencies import get_current_user
 
 router = APIRouter()
 
 async def get_patient_use_cases(db: AsyncSession = Depends(get_db)) -> PatientUseCases:
     patient_repository = PatientRepository(db)
-    return PatientUseCases(patient_repository)
+    external_api_service = ExternalApiService()
+    return PatientUseCases(patient_repository, external_api_service)
 
-@router.post("/", response_model=Patient)
+@router.post("/", response_model=Patient, status_code=status.HTTP_201_CREATED)
 async def create_patient(
     patient: PatientCreate,
     patient_use_cases: PatientUseCases = Depends(get_patient_use_cases),
     current_user: User = Depends(get_current_user)
 ):
     try:
-        patient_entity = await patient_use_cases.create_patient(patient.dict())
-        return Patient.from_orm(patient_entity)
+        patient_entity = await patient_use_cases.create_patient(patient.model_dump())
+        return Patient.model_validate(patient_entity)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -31,32 +32,18 @@ async def create_patient(
         )
 
 @router.get("/", response_model=List[Patient])
-async def read_patients(
-    skip: int = Query(0, ge=0, description="Número de registros para pular"),
-    limit: int = Query(100, ge=1, le=1000, description="Número máximo de registros"),
-    search: Optional[str] = Query(None, description="Buscar por nome, email ou SSN"),
-    gender: Optional[str] = Query(None, description="Filtrar por gênero"),
-    city: Optional[str] = Query(None, description="Filtrar por cidade"),
-    state: Optional[str] = Query(None, description="Filtrar por estado"),
-    age_min: Optional[int] = Query(None, ge=0, le=150, description="Idade mínima"),
-    age_max: Optional[int] = Query(None, ge=0, le=150, description="Idade máxima"),
+async def get_patients(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    search: Optional[str] = Query(None, min_length=2, description="Search in patient names"),
     patient_use_cases: PatientUseCases = Depends(get_patient_use_cases),
     current_user: User = Depends(get_current_user)
 ):
-    patients = await patient_use_cases.search_patients(
-        search=search,
-        gender=gender,
-        city=city,
-        state=state,
-        age_min=age_min,
-        age_max=age_max,
-        skip=skip,
-        limit=limit
-    )
-    return [Patient.from_orm(patient) for patient in patients]
+    patients = await patient_use_cases.get_patients(skip=skip, limit=limit, search=search)
+    return [Patient.model_validate(patient) for patient in patients]
 
 @router.get("/{patient_id}", response_model=Patient)
-async def read_patient(
+async def get_patient(
     patient_id: int,
     patient_use_cases: PatientUseCases = Depends(get_patient_use_cases),
     current_user: User = Depends(get_current_user)
@@ -66,10 +53,10 @@ async def read_patient(
     if patient is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Paciente não encontrado"
+            detail="Patient not found"
         )
     
-    return Patient.from_orm(patient)
+    return Patient.model_validate(patient)
 
 @router.put("/{patient_id}", response_model=Patient)
 async def update_patient(
@@ -81,16 +68,16 @@ async def update_patient(
     try:
         patient = await patient_use_cases.update_patient(
             patient_id, 
-            patient_update.dict(exclude_unset=True)
+            patient_update.model_dump(exclude_unset=True)
         )
         
         if patient is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Paciente não encontrado"
+                detail="Patient not found"
             )
         
-        return Patient.from_orm(patient)
+        return Patient.model_validate(patient)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -108,41 +95,22 @@ async def delete_patient(
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Paciente não encontrado"
+            detail="Patient not found"
         )
     
-    return {"message": "Paciente deletado com sucesso"}
+    return {"message": "Patient deleted successfully"}
 
-@router.post("/import-synthea")
-async def import_synthea_data(
-    count: int = Query(10, ge=1, le=100, description="Número de pacientes para importar"),
+@router.post("/import-data", status_code=status.HTTP_200_OK)
+async def import_patient_data(
+    count: int = Query(10, ge=1, le=100, description="Number of patients to import"),
     patient_use_cases: PatientUseCases = Depends(get_patient_use_cases),
     current_user: User = Depends(get_current_user)
 ):
-    synthea_service = SyntheaService()
-    
     try:
-        fhir_patients = await synthea_service.fetch_patients(count)
-        imported_count = 0
-        
-        for fhir_data in fhir_patients:
-            patient_entity = await synthea_service.transform_fhir_to_patient(fhir_data)
-            
-            existing_patient = await patient_use_cases._patient_repository.get_by_synthea_id(
-                patient_entity.synthea_id
-            )
-            
-            if not existing_patient:
-                await patient_use_cases.create_patient(patient_entity.__dict__)
-                imported_count += 1
-        
-        return {
-            "message": f"Importados {imported_count} pacientes do Synthea com sucesso",
-            "imported_count": imported_count,
-            "total_processed": len(fhir_patients)
-        }
+        imported_count = await patient_use_cases.import_external_patients(count)
+        return {"message": f"Successfully imported {imported_count} patients from external API"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao importar dados do Synthea: {str(e)}"
+            detail=f"Error importing data: {str(e)}"
         )

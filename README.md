@@ -1,591 +1,705 @@
 # 🏥 Nuvie Backend Challenge - Sistema de Gerenciamento de Pacientes
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://python.org)
-[![PostgreSQL](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009639?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-FCA121?style=for-the-badge&logo=SQLAlchemy&logoColor=white)](https://sqlalchemy.org)
+[![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white)](https://jwt.io)
 
 ---
 
-## 🎯 ETAPA 1: OVERVIEW DA APLICAÇÃO
+## 📋 SOBRE O PROJETO
 
-### 📋 Propósito da Aplicação
-Sistema backend robusto e escalável para **gerenciamento completo de dados de pacientes** com integração à API Synthea para geração de dados sintéticos em formato FHIR. Desenvolvido seguindo as melhores práticas de arquitetura de software para ambientes hospitalares e de saúde.
+### 🎯 Descrição do Sistema
+Sistema backend moderno e escalável para **gerenciamento completo de dados de pacientes** desenvolvido com FastAPI. Implementa Clean Architecture para garantir maintibilidade, escalabilidade e testabilidade. O sistema permite CRUD completo de pacientes, autenticação JWT, integração com APIs externas para importação de dados e documentação automática via Swagger.
 
-### 🛠️ Stack Tecnológico
+### 🛠️ Stack Tecnológica
 
-#### **Core Framework**
-- **FastAPI 0.104.1** - Framework web moderno e de alta performance
-- **Python 3.11** - Linguagem principal com type hints
-- **Pydantic V2** - Validação de dados e serialização
+#### **🚀 Framework e Linguagem**
+- **FastAPI 0.104.1** - Framework web assíncrono de alta performance
+- **Python 3.11+** - Linguagem principal com type hints completos
+- **Uvicorn** - Servidor ASGI de produção
 
-#### **Banco de Dados & Cache**
-- **PostgreSQL 15** - Banco de dados principal
-- **SQLAlchemy 2.0 Async** - ORM assíncrono moderno
-- **Redis 7** - Cache e gerenciamento de sessões
-- **Alembic** - Migrations automáticas
+#### **🗄️ Banco de Dados e ORM**
+- **PostgreSQL 15** - Banco de dados relacional principal
+- **SQLAlchemy 2.0 Async** - ORM moderno com suporte assíncrono
+- **Alembic** - Sistema de migrations automáticas
+- **asyncpg** - Driver PostgreSQL assíncrono
 
-#### **Segurança & Autenticação**
+#### **🔐 Autenticação e Segurança**
 - **JWT (JSON Web Tokens)** - Autenticação stateless
 - **bcrypt** - Hash seguro de senhas
-- **CORS** - Configuração para APIs cross-origin
+- **passlib** - Biblioteca de criptografia
+- **python-jose** - Manipulação de tokens JWT
 
-#### **Infraestrutura & Deploy**
+#### **📊 Validação e Serialização**
+- **Pydantic V2** - Validação de dados com ConfigDict
+- **EmailValidator** - Validação específica de emails
+- **Regex Validators** - Validações customizadas
+
+#### **🌐 Integrações Externas**
+- **httpx** - Cliente HTTP assíncrono moderno
+- **JSONPlaceholder API** - Fonte de dados externos simulados
+
+#### **🧪 Testes e Qualidade**
+- **pytest** - Framework de testes robusto
+- **pytest-asyncio** - Suporte para testes assíncronos
+- **pytest-cov** - Relatórios de cobertura de código
+- **TestClient** - Cliente de testes FastAPI
+
+#### **🐳 Infraestrutura e Deploy**
 - **Docker & Docker Compose** - Containerização completa
-- **Nginx** - Reverse proxy para produção
-- **Uvicorn** - Servidor ASGI de alta performance
+- **Nginx** - Proxy reverso para produção
+- **Scripts .bat/.sh** - Automação de deployment
 
-#### **Testes & Qualidade**
-- **pytest + pytest-asyncio** - Testes automatizados
-- **Coverage** - Relatórios de cobertura
-- **Type hints** - Tipagem estática completa
+### 🏗️ Arquitetura Implementada
 
-### 🏗️ Arquitetura Clean Architecture
+**Clean Architecture** com separação clara de responsabilidades:
 
 ```
 📁 app/
-├── 🏛️ domain/              # Camada de Domínio
-│   ├── entities/           # Entidades de negócio (Patient, User)
+├── 🎯 domain/              # Regras de Negócio
+│   ├── entities/           # Entidades principais (Patient, User)
 │   └── interfaces.py       # Contratos e abstrações
-├── 📊 application/         # Camada de Aplicação  
-│   └── use_cases/          # Casos de uso e regras de negócio
-├── 🔧 infrastructure/      # Camada de Infraestrutura
-│   ├── repositories/       # Implementação de repositórios
-│   └── external/           # Serviços externos (Synthea)
-├── 🌐 presentation/        # Camada de Apresentação
-│   ├── controllers/        # Controllers REST
-│   └── dependencies.py     # Injeção de dependências
-├── 📄 schemas/             # Schemas Pydantic (DTOs)
+├── 🔄 application/         # Casos de Uso
+│   └── use_cases/          # Lógica de aplicação
+├── 🔧 infrastructure/      # Detalhes Técnicos
+│   ├── repositories/       # Acesso a dados
+│   └── external/           # APIs externas
+├── 🌐 presentation/        # Interface Web
+│   └── controllers/        # Endpoints REST
+├── 📄 schemas/             # DTOs Pydantic
 └── 🗄️ models/              # Models SQLAlchemy
 ```
 
-### ⚡ Princípios SOLID Implementados
+### ⚡ Funcionalidades Principais
 
-- **🔹 SRP** - Cada classe possui uma única responsabilidade
-- **🔹 OCP** - Código aberto para extensão, fechado para modificação  
-- **🔹 LSP** - Interfaces respeitam contratos de substituição
-- **🔹 ISP** - Interfaces segregadas por responsabilidade
-- **🔹 DIP** - Dependência de abstrações, não implementações
+#### **👥 Gestão de Pacientes**
+- ✅ **CRUD Completo** - Criar, ler, atualizar e deletar pacientes
+- ✅ **Busca Avançada** - Filtros por nome com paginação
+- ✅ **Validação Rigorosa** - Email único, telefone e nome
+- ✅ **Modelo Simplificado** - name, email, phone (essencial)
 
-### 🚀 Funcionalidades Principais
+#### **🔐 Sistema de Autenticação**
+- ✅ **Registro de Usuários** - Criação de contas seguras
+- ✅ **Login JWT** - Autenticação stateless moderna
+- ✅ **Proteção de Rotas** - Middleware de autenticação
+- ✅ **Validação de Tokens** - Verificação automática
 
-#### **Gerenciamento de Pacientes**
-- ✅ CRUD completo com validações robustas
-- ✅ Busca avançada com múltiplos filtros
-- ✅ Paginação otimizada para grandes volumes
-- ✅ Validação de dados pessoais e médicos
+#### **🔗 Integração Externa**
+- ✅ **Import de Dados** - Consumo da API JSONPlaceholder
+- ✅ **Transformação de Dados** - Limpeza e normalização
+- ✅ **Controle de Duplicatas** - Validação por email único
+- ✅ **Tratamento de Erros** - Handling robusto
 
-#### **Sistema de Autenticação**
-- ✅ Registro e login de usuários
-- ✅ Autenticação JWT stateless
-- ✅ Controle de acesso baseado em roles
-- ✅ Sessões seguras com refresh tokens
-
-#### **Integração Synthea FHIR**
-- ✅ Consumo de dados sintéticos da API Synthea
-- ✅ Transformação automática FHIR R4 → Modelo interno
-- ✅ Importação batch com controle de duplicatas
-- ✅ Mapeamento completo de recursos FHIR
-
-### 🔐 Características de Segurança
-
-- **🛡️ Autenticação JWT** com algoritmo HS256
-- **🔒 Hash bcrypt** para senhas com salt
-- **🌐 CORS** configurado para ambientes específicos
-- **📝 Logs estruturados** para auditoria
-- **🔍 Validação rigorosa** de todos os inputs
-- **⚡ Rate limiting** por usuário
-
-### ⚡ Performance & Escalabilidade
-
-- **🚀 Operações assíncronas** com SQLAlchemy 2.0
-- **💾 Cache Redis** para consultas frequentes  
-- **📊 Connection pooling** otimizado
-- **🔄 Paginação eficiente** para grandes datasets
-- **📈 Métricas Prometheus** para monitoramento
+#### **📊 Monitoramento e Saúde**
+- ✅ **Health Check** - Verificação de status da aplicação
+- ✅ **Documentação Automática** - Swagger UI integrado
+- ✅ **Logs Estruturados** - Rastreamento de operações
+- ✅ **Métricas de Sistema** - Informações de performance
 
 ---
 
-## 🔗 ETAPA 2: ENDPOINTS E UTILIZAÇÃO
+## 🚀 COMO INICIAR O PROJETO
 
-### 🔐 Autenticação e Autorização
+### 🎯 Scripts .BAT (Prioridade 1 - Recomendado)
 
-#### **POST** `/auth/register` - Registrar novo usuário
-```json
-{
-  "username": "usuario_exemplo",
-  "email": "usuario@exemplo.com", 
-  "password": "senha_segura_123",
-  "full_name": "Nome Completo"
-}
-```
-**Validações:**
-- `username`: string, 3-50 caracteres, únicos
-- `email`: formato de email válido, único
-- `password`: mínimo 8 caracteres, alfanumérico
-- `full_name`: opcional, máximo 200 caracteres
-
-**Response 201:**
-```json
-{
-  "id": 1,
-  "username": "usuario_exemplo",
-  "email": "usuario@exemplo.com",
-  "full_name": "Nome Completo", 
-  "is_active": true,
-  "is_superuser": false,
-  "created_at": "2025-08-25T10:00:00Z"
-}
-```
-
-#### **POST** `/auth/token` - Login e obtenção de JWT
-```bash
-curl -X POST "http://localhost:8000/auth/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=usuario_exemplo&password=senha_segura_123"
-```
-**Validações:**
-- `username`: obrigatório, deve existir no sistema
-- `password`: obrigatório, deve corresponder ao hash
-
-**Response 200:**
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer"
-}
-```
-
-#### **GET** `/auth/me` - Dados do usuário logado
-**Headers:** `Authorization: Bearer {token}`
-
-**Response 200:**
-```json
-{
-  "id": 1,
-  "username": "usuario_exemplo",
-  "email": "usuario@exemplo.com",
-  "full_name": "Nome Completo",
-  "is_active": true,
-  "is_superuser": false
-}
-```
-
-### 👥 Gerenciamento de Pacientes
-
-#### **POST** `/patients/` - Criar novo paciente
-**Headers:** `Authorization: Bearer {token}`
-```json
-{
-  "first_name": "João",
-  "last_name": "Silva", 
-  "date_of_birth": "1990-01-15",
-  "gender": "male",
-  "ssn": "123-45-6789",
-  "address": "Rua das Flores, 123",
-  "city": "São Paulo",
-  "state": "SP", 
-  "zip_code": "01234-567",
-  "phone": "+5511999999999",
-  "email": "joao.silva@email.com",
-  "race": "white",
-  "ethnicity": "non-hispanic"
-}
-```
-**Validações:**
-- `first_name`: obrigatório, 1-100 caracteres
-- `last_name`: obrigatório, 1-100 caracteres  
-- `date_of_birth`: obrigatório, formato YYYY-MM-DD, não futuro
-- `gender`: obrigatório, valores: male/female/other
-- `ssn`: opcional, formato XXX-XX-XXXX, único
-- `email`: opcional, formato válido de email
-- `phone`: opcional, formato internacional
-
-**Response 201:** Dados do paciente criado com ID
-
-#### **GET** `/patients/` - Listar pacientes com filtros
-**Headers:** `Authorization: Bearer {token}`
-
-**Query Parameters:**
-```bash
-GET /patients/?search=joão&gender=male&city=são paulo&age_min=18&age_max=65&limit=10&offset=0
-```
-
-| Parâmetro | Tipo | Validação | Descrição |
-|-----------|------|-----------|-----------|
-| `search` | string | - | Busca em nome, email, SSN |
-| `gender` | string | male/female/other | Filtro por gênero |
-| `city` | string | - | Filtro por cidade (parcial) |
-| `state` | string | - | Filtro por estado |
-| `age_min` | int | 0-150 | Idade mínima |
-| `age_max` | int | 0-150 | Idade máxima |
-| `limit` | int | 1-1000 | Registros por página |
-| `offset` | int | ≥0 | Registros para pular |
-
-**Response 200:**
-```json
-[
-  {
-    "id": 1,
-    "first_name": "João",
-    "last_name": "Silva",
-    "date_of_birth": "1990-01-15",
-    "gender": "male",
-    "age": 35,
-    "email": "joao.silva@email.com",
-    "created_at": "2025-08-25T10:00:00Z"
-  }
-]
-```
-
-#### **GET** `/patients/{id}` - Obter paciente específico
-**Headers:** `Authorization: Bearer {token}`
-**Validações:** `id` deve ser inteiro positivo existente
-
-**Response 200:** Dados completos do paciente
-**Response 404:** `{"detail": "Paciente não encontrado"}`
-
-#### **PUT** `/patients/{id}` - Atualizar paciente
-**Headers:** `Authorization: Bearer {token}`
-**Body:** Mesmas validações do POST, todos os campos opcionais
-
-**Response 200:** Dados atualizados do paciente
-**Response 404:** Paciente não encontrado
-
-#### **DELETE** `/patients/{id}` - Remover paciente  
-**Headers:** `Authorization: Bearer {token}`
-
-**Response 200:**
-```json
-{"message": "Paciente deletado com sucesso"}
-```
-
-### 🔄 Integração Synthea
-
-#### **POST** `/patients/import-synthea` - Importar dados Synthea
-**Headers:** `Authorization: Bearer {token}`
-
-**Query Parameters:**
-```bash
-POST /patients/import-synthea?count=10
-```
-- `count`: int, 1-100, número de pacientes para importar
-
-**Response 200:**
-```json
-{
-  "message": "Importados 8 pacientes do Synthea com sucesso",
-  "imported_count": 8,
-  "total_processed": 10,
-  "duplicates_skipped": 2
-}
-```
-
-**Códigos de Erro:**
-- **500:** Erro na API Synthea ou transformação FHIR
-
-### 📊 Sistema e Monitoramento
-
-#### **GET** `/health` - Health check da aplicação
-**Response 200:**
-```json
-{
-  "status": "healthy",
-  "service": "nuvie-backend", 
-  "version": "2.0.0",
-  "database": "connected",
-  "cache": "connected"
-}
-```
-
-#### **GET** `/metrics` - Métricas para Prometheus
-**Response 200:**
-```json
-{
-  "service": "nuvie-backend",
-  "uptime": "healthy",
-  "database": "connected", 
-  "memory_usage": "optimal",
-  "active_users": 45,
-  "total_patients": 1234
-}
-```
-
-#### **GET** `/` - Informações da API
-**Response 200:**
-```json
-{
-  "message": "Nuvie Backend Challenge API",
-  "version": "2.0.0", 
-  "status": "active",
-  "architecture": "Clean Architecture"
-}
-```
-
-### 🔍 Códigos de Status HTTP
-
-| Código | Significado | Quando Ocorre |
-|--------|-------------|---------------|
-| 200 | Success | Operação bem-sucedida |
-| 201 | Created | Recurso criado com sucesso |
-| 400 | Bad Request | Dados inválidos ou validação falhou |
-| 401 | Unauthorized | Token ausente ou inválido |
-| 404 | Not Found | Recurso não encontrado |
-| 422 | Validation Error | Erro de validação Pydantic |
-| 500 | Internal Error | Erro interno do servidor |
-
----
-
-## 🚀 ETAPA 3: EXECUÇÃO E SCRIPTS
-
-### 📋 Pré-requisitos
-
-#### **Ambiente Dockerizado (Recomendado)**
-- 🐳 **Docker Desktop** 20.10+
-- 🔧 **Docker Compose** 2.0+
-- 💾 **4GB RAM** disponível
-- 💿 **2GB espaço** em disco
-
-#### **Desenvolvimento Local**
-- 🐍 **Python 3.11+**
-- 🐘 **PostgreSQL 15+**  
-- 🔴 **Redis 7+**
-- 📦 **pip** ou **poetry**
-
-### 📜 Scripts Disponíveis
-
-#### **🚀 start.bat / start.sh** - Inicialização completa
-```bash
-# Verifica Docker
-# Copia .env.example → .env (se necessário)
-# Inicia todos os serviços
-# Aguarda inicialização (10s)
-# Testa health check
-# Exibe URLs de acesso
-```
-
-#### **🔄 restart.bat** - Reinicialização com rebuild
-```bash  
-# Para containers existentes
-# Remove volumes e imagens antigas
-# Reconstrói com --no-cache
-# Inicia serviços atualizados
-# Aguarda e testa (20s)
-# Exibe logs em caso de erro
-```
-
-### 🐳 Execução via Docker (Recomendado)
-
-#### **Início Rápido**
-```bash
-# Windows
+#### **Inicialização Rápida**
+```batch
+# Primeira execução - Setup completo
 start.bat
 
-# Linux/Mac  
-chmod +x start.sh
-./start.sh
+# Reinicialização com rebuild
+restart.bat
+
+# Execução de testes
+test.bat
 ```
+
+#### **Funcionalidades dos Scripts**
+- **`start.bat`**: Verifica Docker, copia .env, inicia serviços, aguarda inicialização, testa health check
+- **`restart.bat`**: Para containers, remove volumes, reconstrói imagens, reinicia com configurações atualizadas
+- **`test.bat`**: Executa suite completa de testes com relatórios de cobertura
+
+### 🐳 Docker Compose (Prioridade 2)
 
 #### **Comandos Manuais**
 ```bash
-# 1. Copiar configurações
+# 1. Preparação do ambiente
 cp .env.example .env
 
-# 2. Editar variáveis (opcional)
-# Abrir .env e ajustar configurações
+# 2. Inicialização completa
+docker-compose up --build -d
 
-# 3. Iniciar todos os serviços
-docker-compose up -d
+# 3. Executar migrations
+docker-compose exec api alembic upgrade head
 
-# 4. Verificar logs
-docker-compose logs -f api
+# 4. Verificar status
+docker-compose ps
+docker-compose logs api
 
 # 5. Parar aplicação
 docker-compose down
 ```
 
-#### **Rebuild Completo**
+#### **Comandos de Desenvolvimento**
 ```bash
-# Para desenvolvimento com mudanças
+# Rebuild completo (após mudanças)
 docker-compose down --volumes
 docker-compose build --no-cache
 docker-compose up -d
+
+# Logs em tempo real
+docker-compose logs -f api
+
+# Acesso ao container
+docker-compose exec api bash
 ```
 
-### 💻 Execução Local (Desenvolvimento)
+### 🐍 Python Direto (Prioridade 3)
 
-#### **1. Configuração do Ambiente**
+#### **Setup do Ambiente**
 ```bash
-# Criar ambiente virtual
+# 1. Criar ambiente virtual
 python -m venv venv
 
-# Ativar ambiente
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
+# 2. Ativar ambiente virtual
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
 
-# Instalar dependências
+# 3. Instalar dependências
 pip install -r requirements.txt
 ```
 
-#### **2. Configurar Banco de Dados**
+#### **Configuração Local**
 ```bash
-# PostgreSQL local
+# 4. Configurar PostgreSQL local
 createdb nuvie_db
 
-# Configurar .env
+# 5. Configurar variáveis de ambiente
+# Editar .env com configurações locais
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost/nuvie_db
-REDIS_URL=redis://localhost:6379
-SECRET_KEY=your-development-secret-key
-```
+SECRET_KEY=your-local-secret-key
 
-#### **3. Executar Migrations**
-```bash
-# Criar migration inicial
+# 6. Executar migrations
 alembic upgrade head
 
-# Verificar status
-alembic current
-```
-
-#### **4. Iniciar Aplicação**
-```bash
-# Modo desenvolvimento (auto-reload)
+# 7. Iniciar aplicação
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Modo produção
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-### ⚙️ Configuração de Ambiente
+### 🧪 Comandos de Teste e Diagnóstico
 
-#### **Arquivo .env Principal**
-```env
-# Banco de dados
-DATABASE_URL=postgresql+asyncpg://nuvie_user:nuvie_password@localhost:5432/nuvie_db
-
-# Cache Redis  
-REDIS_URL=redis://localhost:6379
-
-# Autenticação
-SECRET_KEY=your-super-secret-key-change-in-production
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# APIs Externas
-SYNTHEA_BASE_URL=https://synthea.mitre.org/
-
-# Aplicação
-DEBUG=true
-ENVIRONMENT=development
-```
-
-#### **Variáveis para Produção**
-```env
-# Docker Compose Production
-POSTGRES_USER=nuvie_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=nuvie_db
-SECRET_KEY=your-production-secret-key-256-bits
-DEBUG=false
-ENVIRONMENT=production
-```
-
-### 🔧 Troubleshooting
-
-#### **🐳 Problemas Docker**
-
-**Erro: "Cannot connect to Docker daemon"**
+#### **Execução de Testes**
 ```bash
-# Verificar se Docker está rodando
-docker info
+# Todos os testes com Docker
+docker-compose exec api pytest
 
-# Reiniciar Docker Desktop
-# Windows: Reiniciar aplicação
-# Linux: sudo systemctl restart docker
+# Testes com cobertura
+docker-compose exec api pytest --cov=app --cov-report=html
+
+# Testes específicos
+docker-compose exec api pytest tests/test_patients.py -v
+docker-compose exec api pytest tests/test_auth.py -v
 ```
 
-**Erro: "Port 8000 already in use"**
+#### **Diagnóstico Completo (Comando Específico)**
 ```bash
-# Encontrar processo usando porta
-netstat -ano | findstr :8000  # Windows
-lsof -i :8000                # Linux/Mac
-
-# Parar aplicação anterior
-docker-compose down
+# Script de diagnóstico detalhado
+docker-compose exec api bash diagnose_tests.sh
 ```
 
-**Erro: "No space left on device"**
+**O script `diagnose_tests.sh` executa:**
+- ✅ Teste de autenticação específico
+- ✅ Teste de paciente específico  
+- ✅ Teste de endpoint completo
+- ✅ Resumo de todos os testes (34 testes)
+- ✅ Relatório detalhado de falhas
+- ✅ Análise de warnings e logs
+
+#### **Outros Comandos Úteis**
 ```bash
-# Limpar volumes não utilizados
-docker system prune -a --volumes
+# Verificar saúde da aplicação
+curl http://localhost:8000/health
 
-# Verificar espaço
-docker system df
+# Documentação Swagger
+# Abrir: http://localhost:8000/docs
+
+# Logs específicos
+docker-compose logs api | grep ERROR
+docker-compose logs db --tail=50
+
+# Status dos containers
+docker-compose ps
+docker stats
 ```
-
-#### **🗄️ Problemas de Banco**
-
-**Erro: "Connection refused"**
-```bash
-# Verificar se PostgreSQL está rodando
-docker-compose logs db
-
-# Verificar conexão
-docker-compose exec db psql -U nuvie_user -d nuvie_db
-```
-
-**Erro: "Relation does not exist"**
-```bash
-# Executar migrations
-docker-compose exec api alembic upgrade head
-
-# Verificar tabelas
-docker-compose exec db psql -U nuvie_user -d nuvie_db -c "\dt"
-```
-
-#### **🔐 Problemas de Autenticação**
-
-**Erro: "Invalid token"**
-- Verificar se token não expirou (30 min default)
-- Confirmar formato: `Authorization: Bearer {token}`
-- Verificar SECRET_KEY consistente
 
 ### 🌐 URLs de Acesso
 
-#### **Desenvolvimento Local**
-- 🏠 **API Principal**: http://localhost:8000
-- 📖 **Documentação Swagger**: http://localhost:8000/docs  
-- 📚 **Documentação ReDoc**: http://localhost:8000/redoc
-- ❤️ **Health Check**: http://localhost:8000/health
-- 📊 **Métricas**: http://localhost:8000/metrics
-- 🗄️ **PostgreSQL**: localhost:5432
-- 🔴 **Redis**: localhost:6379
+| Serviço | URL | Descrição |
+|---------|-----|-----------|
+| **API Principal** | http://localhost:8000 | Endpoint base da API |
+| **Swagger UI** | http://localhost:8000/docs | Documentação interativa |
+| **ReDoc** | http://localhost:8000/redoc | Documentação alternativa |
+| **Health Check** | http://localhost:8000/health | Status da aplicação |
+| **PostgreSQL** | localhost:5432 | Banco de dados |
 
-#### **Docker Services**
+---
+
+## 📚 ENDPOINTS E DOCUMENTAÇÃO
+
+### 🔐 Autenticação
+
+#### `POST /auth/register` - Registrar Novo Usuário
+
+**Descrição:** Cria uma nova conta de usuário no sistema com validações completas
+
+**Autenticação:** ❌ Não necessária
+
+**Parâmetros:**
+| Tipo | Nome | Tipo | Obrigatório | Descrição |
+|------|------|------|-------------|-----------|
+| Body | username | string | ✅ | Nome de usuário único (3-50 chars) |
+| Body | email | string | ✅ | Email válido e único |
+| Body | password | string | ✅ | Senha segura (min 8 chars) |
+| Body | full_name | string | ❌ | Nome completo (max 200 chars) |
+
+**Validações:**
+- username: Apenas letras, números e underscore
+- email: Formato válido de email (@domain.com)
+- password: Mínimo 8 caracteres com letras e números
+- full_name: Somente letras, espaços e acentos
+
+**Exemplo Request:**
 ```bash
-# Verificar status de todos os containers
-docker-compose ps
-
-# Logs específicos por serviço
-docker-compose logs api      # FastAPI application
-docker-compose logs db       # PostgreSQL database  
-docker-compose logs redis    # Redis cache
-
-# Acesso direto aos containers
-docker-compose exec api bash      # Terminal API
-docker-compose exec db psql -U nuvie_user -d nuvie_db  # PostgreSQL CLI
-docker-compose exec redis redis-cli  # Redis CLI
+curl -X POST "http://localhost:8000/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "joao123",
+    "email": "joao@example.com",
+    "password": "MinhaSenh@123",
+    "full_name": "João Silva"
+  }'
 ```
 
-#### **Comandos de Monitoramento**
+**Exemplo Response (201):**
+```json
+{
+  "id": 1,
+  "username": "joao123",
+  "email": "joao@example.com",
+  "full_name": "João Silva",
+  "is_active": true,
+  "created_at": "2025-08-25T10:00:00Z"
+}
+```
+
+**Possíveis Erros:**
+- 400: Bad Request - Email já cadastrado
+- 422: Validation Error - Dados inválidos
+
+#### `POST /auth/token` - Login e Obtenção de JWT
+
+**Descrição:** Autentica usuário e retorna token JWT para acesso às rotas protegidas
+
+**Autenticação:** ❌ Não necessária
+
+**Parâmetros:**
+| Tipo | Nome | Tipo | Obrigatório | Descrição |
+|------|------|------|-------------|-----------|
+| Form | username | string | ✅ | Nome de usuário ou email |
+| Form | password | string | ✅ | Senha do usuário |
+
+**Validações:**
+- username: Deve existir no sistema
+- password: Deve corresponder ao hash armazenado
+
+**Exemplo Request:**
 ```bash
-# Performance em tempo real
-docker stats
+curl -X POST "http://localhost:8000/auth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=joao123&password=MinhaSenh@123"
+```
 
-# Verificar health checks
-docker-compose ps
-curl http://localhost:8000/health
+**Exemplo Response (200):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2FvMTIzIiwiZXhwIjoxNjM5NTU2NDAwfQ.signature",
+  "token_type": "bearer"
+}
+```
 
-# Logs estruturados
-docker-compose logs api | grep ERROR
-docker-compose logs api --tail=100 --follow
+**Possíveis Erros:**
+- 400: Bad Request - Credenciais inválidas
+
+#### `GET /auth/me` - Dados do Usuário Autenticado
+
+**Descrição:** Retorna informações do usuário logado baseado no token JWT
+
+**Autenticação:** ✅ Obrigatória
+
+**Parâmetros:** Nenhum
+
+**Validações:**
+- Token JWT válido no header Authorization
+- Usuário deve existir e estar ativo
+
+**Exemplo Request:**
+```bash
+curl -X GET "http://localhost:8000/auth/me" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**Exemplo Response (200):**
+```json
+{
+  "id": 1,
+  "username": "joao123", 
+  "email": "joao@example.com",
+  "full_name": "João Silva",
+  "is_active": true
+}
+```
+
+**Possíveis Erros:**
+- 403: Forbidden - Token ausente
+- 401: Unauthorized - Token inválido/expirado
+
+### 👥 Gestão de Pacientes
+
+#### `GET /patients/` - Listar Pacientes com Filtros
+
+**Descrição:** Lista pacientes com paginação e busca por nome
+
+**Autenticação:** ✅ Obrigatória
+
+**Parâmetros:**
+| Tipo | Nome | Tipo | Obrigatório | Descrição |
+|------|------|------|-------------|-----------|
+| Query | skip | int | ❌ | Registros para pular (padrão: 0) |
+| Query | limit | int | ❌ | Máximo de registros (padrão: 100, máx: 1000) |
+| Query | search | string | ❌ | Busca no nome do paciente (mín: 2 chars) |
+
+**Validações:**
+- skip: Deve ser >= 0
+- limit: Entre 1 e 1000
+- search: Mínimo 2 caracteres se informado
+
+**Exemplo Request:**
+```bash
+curl -X GET "http://localhost:8000/patients/?skip=0&limit=10&search=Silva" \
+  -H "Authorization: Bearer TOKEN_JWT"
+```
+
+**Exemplo Response (200):**
+```json
+[
+  {
+    "id": 1,
+    "name": "João Silva",
+    "email": "joao.silva@email.com", 
+    "phone": "+5511999999999",
+    "created_at": "2025-08-25T10:00:00Z",
+    "updated_at": "2025-08-25T10:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Maria Silva Santos",
+    "email": "maria.santos@email.com",
+    "phone": "+5511888888888", 
+    "created_at": "2025-08-25T11:00:00Z",
+    "updated_at": "2025-08-25T11:00:00Z"
+  }
+]
+```
+
+**Possíveis Erros:**
+- 403: Forbidden - Sem autenticação
+- 400: Bad Request - Parâmetros inválidos
+
+#### `POST /patients/` - Criar Novo Paciente
+
+**Descrição:** Cria um novo paciente no sistema com dados obrigatórios
+
+**Autenticação:** ✅ Obrigatória
+
+**Parâmetros:**
+| Tipo | Nome | Tipo | Obrigatório | Descrição |
+|------|------|------|-------------|-----------|
+| Body | name | string | ✅ | Nome completo (2-100 chars) |
+| Body | email | string | ✅ | Email único e válido |
+| Body | phone | string | ✅ | Telefone (10-20 chars) |
+
+**Validações:**
+- name: Apenas letras, espaços, hífens e apostrofes
+- email: Formato válido e único no sistema
+- phone: Entre 10-15 dígitos (aceita formatação)
+
+**Exemplo Request:**
+```bash
+curl -X POST "http://localhost:8000/patients/" \
+  -H "Authorization: Bearer TOKEN_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Ana Costa",
+    "email": "ana.costa@email.com",
+    "phone": "+5511777777777"
+  }'
+```
+
+**Exemplo Response (201):**
+```json
+{
+  "id": 3,
+  "name": "Ana Costa",
+  "email": "ana.costa@email.com",
+  "phone": "+5511777777777",
+  "created_at": "2025-08-25T12:00:00Z",
+  "updated_at": "2025-08-25T12:00:00Z"
+}
+```
+
+**Possíveis Erros:**
+- 400: Bad Request - Email já existe
+- 422: Validation Error - Dados inválidos
+
+#### `GET /patients/{id}` - Buscar Paciente por ID
+
+**Descrição:** Retorna dados completos de um paciente específico
+
+**Autenticação:** ✅ Obrigatória
+
+**Parâmetros:**
+| Tipo | Nome | Tipo | Obrigatório | Descrição |
+|------|------|------|-------------|-----------|
+| Path | id | int | ✅ | ID único do paciente |
+
+**Validações:**
+- id: Deve ser inteiro positivo e existir no sistema
+
+**Exemplo Request:**
+```bash
+curl -X GET "http://localhost:8000/patients/1" \
+  -H "Authorization: Bearer TOKEN_JWT"
+```
+
+**Exemplo Response (200):**
+```json
+{
+  "id": 1,
+  "name": "João Silva",
+  "email": "joao.silva@email.com",
+  "phone": "+5511999999999",
+  "created_at": "2025-08-25T10:00:00Z", 
+  "updated_at": "2025-08-25T10:00:00Z"
+}
+```
+
+**Possíveis Erros:**
+- 404: Not Found - Paciente não encontrado
+- 403: Forbidden - Sem autenticação
+
+#### `PUT /patients/{id}` - Atualizar Paciente
+
+**Descrição:** Atualiza dados de um paciente existente (campos opcionais)
+
+**Autenticação:** ✅ Obrigatória
+
+**Parâmetros:**
+| Tipo | Nome | Tipo | Obrigatório | Descrição |
+|------|------|------|-------------|-----------|
+| Path | id | int | ✅ | ID único do paciente |
+| Body | name | string | ❌ | Novo nome (2-100 chars) |
+| Body | email | string | ❌ | Novo email (deve ser único) |
+| Body | phone | string | ❌ | Novo telefone (10-20 chars) |
+
+**Validações:**
+- Mesmas validações do POST para campos informados
+- Email deve ser único (exceto se for o mesmo atual)
+
+**Exemplo Request:**
+```bash
+curl -X PUT "http://localhost:8000/patients/1" \
+  -H "Authorization: Bearer TOKEN_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "João Silva Santos",
+    "phone": "+5511666666666"
+  }'
+```
+
+**Exemplo Response (200):**
+```json
+{
+  "id": 1,
+  "name": "João Silva Santos",
+  "email": "joao.silva@email.com",
+  "phone": "+5511666666666",
+  "created_at": "2025-08-25T10:00:00Z",
+  "updated_at": "2025-08-25T13:00:00Z"
+}
+```
+
+**Possíveis Erros:**
+- 404: Not Found - Paciente não encontrado
+- 400: Bad Request - Email já existe
+
+#### `DELETE /patients/{id}` - Deletar Paciente
+
+**Descrição:** Remove permanentemente um paciente do sistema
+
+**Autenticação:** ✅ Obrigatória
+
+**Parâmetros:**
+| Tipo | Nome | Tipo | Obrigatório | Descrição |
+|------|------|------|-------------|-----------|
+| Path | id | int | ✅ | ID único do paciente |
+
+**Validações:**
+- id: Deve ser inteiro positivo e existir no sistema
+
+**Exemplo Request:**
+```bash
+curl -X DELETE "http://localhost:8000/patients/1" \
+  -H "Authorization: Bearer TOKEN_JWT"
+```
+
+**Exemplo Response (200):**
+```json
+{
+  "message": "Patient deleted successfully"
+}
+```
+
+**Possíveis Erros:**
+- 404: Not Found - Paciente não encontrado
+- 403: Forbidden - Sem autenticação
+
+#### `POST /patients/import-data` - Importar Dados Externos
+
+**Descrição:** Importa pacientes da API JSONPlaceholder com transformação automática
+
+**Autenticação:** ✅ Obrigatória
+
+**Parâmetros:**
+| Tipo | Nome | Tipo | Obrigatório | Descrição |
+|------|------|------|-------------|-----------|
+| Query | count | int | ❌ | Quantidade para importar (padrão: 10, máx: 100) |
+
+**Validações:**
+- count: Entre 1 e 100
+- Dados são automaticamente limpos e validados
+- Emails duplicados são ignorados
+
+**Exemplo Request:**
+```bash
+curl -X POST "http://localhost:8000/patients/import-data?count=5" \
+  -H "Authorization: Bearer TOKEN_JWT"
+```
+
+**Exemplo Response (200):**
+```json
+{
+  "message": "Successfully imported 3 patients from external API"
+}
+```
+
+**Possíveis Erros:**
+- 500: Internal Server Error - Erro na API externa
+- 403: Forbidden - Sem autenticação
+
+### 📊 Sistema e Monitoramento
+
+#### `GET /health` - Health Check da Aplicação
+
+**Descrição:** Verifica o status geral da aplicação e dependências
+
+**Autenticação:** ❌ Não necessária
+
+**Parâmetros:** Nenhum
+
+**Validações:** Nenhuma
+
+**Exemplo Request:**
+```bash
+curl -X GET "http://localhost:8000/health"
+```
+
+**Exemplo Response (200):**
+```json
+{
+  "status": "healthy",
+  "service": "nuvie-backend",
+  "version": "2.0.0",
+  "timestamp": "2025-08-25T14:00:00Z"
+}
+```
+
+**Possíveis Erros:**
+- 500: Internal Server Error - Serviço indisponível
+
+#### `GET /` - Informações da API
+
+**Descrição:** Retorna informações básicas sobre a API
+
+**Autenticação:** ❌ Não necessária
+
+**Parâmetros:** Nenhum
+
+**Validações:** Nenhuma
+
+**Exemplo Request:**
+```bash
+curl -X GET "http://localhost:8000/"
+```
+
+**Exemplo Response (200):**
+```json
+{
+  "message": "Nuvie Backend Challenge API",
+  "version": "2.0.0",
+  "status": "active",
+  "docs": "/docs"
+}
+```
+
+### 🔍 Códigos de Status HTTP
+
+| Código | Nome | Descrição | Quando Ocorre |
+|--------|------|-----------|---------------|
+| **200** | OK | Sucesso | Operação realizada com êxito |
+| **201** | Created | Criado | Recurso criado com sucesso |
+| **400** | Bad Request | Solicitação Inválida | Dados inválidos ou regra de negócio violada |
+| **401** | Unauthorized | Não Autorizado | Token JWT inválido ou expirado |
+| **403** | Forbidden | Proibido | Token JWT ausente |
+| **404** | Not Found | Não Encontrado | Recurso solicitado não existe |
+| **422** | Unprocessable Entity | Entidade Não Processável | Erro de validação Pydantic |
+| **500** | Internal Server Error | Erro Interno | Erro não tratado no servidor |
+
+### 📋 Estrutura de Resposta de Erro
+
+**Exemplo de Erro de Validação (422):**
+```json
+{
+  "details": [
+    {
+      "type": "string_too_short",
+      "loc": ["body", "name"],
+      "msg": "String should have at least 2 characters",
+      "input": "A"
+    }
+  ],
+  "error": "Validation failed",
+  "message": "The request contains invalid data"
+}
+```
+
+**Exemplo de Erro de Negócio (400):**
+```json
+{
+  "detail": "Patient with this email already exists"
+}
 ```
