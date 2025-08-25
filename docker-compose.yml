@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: nuvie-postgres
+    environment:
+      POSTGRES_USER: nuvie_user
+      POSTGRES_PASSWORD: nuvie_password
+      POSTGRES_DB: nuvie_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nuvie_user -d nuvie_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: nuvie-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api:
+    build:
+      context: .
+      target: development
+    container_name: nuvie-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nuvie_user:nuvie_password@db:5432/nuvie_db
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: dev-secret-key-change-in-production
+      DEBUG: "true"
+      ENVIRONMENT: development
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
